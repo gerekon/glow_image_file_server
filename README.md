@@ -1,119 +1,108 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32-S3 |
+| ----------------- | -------- |
 
-# Simple HTTP File Server Example
+# GLOW Image Recognition Demo
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+This is a demo project for testing [GLOW Ahead Of Time (AOT) compiled executable bundles](https://github.com/pytorch/glow/blob/master/docs/AOT.md). This project is based on ESP IDF [file server example](https://github.com/espressif/esp-idf/tree/master/examples/protocols/http_server/file_serving). Follow the link above for general description.
 
-HTTP file server example demonstrates file serving with both upload and download capability, using the `esp_http_server` component of ESP-IDF. This example can use one of the following options for data storage:
-
-- SPIFFS filesystem in SPI Flash. This option works on any ESP development board without any extra hardware.
-
-- FAT filesystem on an SD card. Both SDSPI and SDMMC drivers are supported. You need a development board with an SD card slot to use this option.
-
-The following URIs are provided by the server:
-
-| URI                  | Method  | Description                                                                               |
-|----------------------|---------|-------------------------------------------------------------------------------------------|
-|`index.html`          | GET     | Redirects to `/`                                                                          |
-|`favicon.ico`         | GET     | Browsers use this path to retrieve page icon which is embedded in flash                   |
-|`/`                   | GET     | Responds with webpage displaying list of files on the filesystem and form for uploading new files |
-|`/<file path>`        | GET     | For downloading files stored on the filesystem                                                    |
-|`/upload/<file path>` | POST    | For uploading files on to the filesystem. Files are sent as body of HTTP post requests            |
-|`/delete/<file path>` | POST    | Command for deleting a file from the filesystem                                                   |
-
-File server implementation can be found under `main/file_server.c`. `main/upload_script.html` has some HTML, JavaScript and Ajax content used for file uploading, which is embedded in the flash image and used as it is when generating the home page of the file server.
-
-Note that the default `/index.html` and `/favicon.ico` files can be overridden by uploading files with same name to the filesystem.
+This project integrates GLOW AOT bundle built from [LeNet and MNIST handwritten digit recognition model](https://medium.com/mlearning-ai/lenet-and-mnist-handwritten-digit-classification-354f5646c590). Every PNG file uploaded to the server is passed to NN and the result is printed to terminal. [LeNet and MNIST bundle example](https://github.com/pytorch/glow/tree/master/examples/bundles/lenet_mnist) from GLOW project was used as a reference.
+For PNG images processing [PNGdec library](https://github.com/bitbank2/PNGdec) was used.
 
 ## How to use the example
 
-### Wi-Fi/Ethernet connection
-```
-idf.py menuconfig
-```
-Open the project configuration menu (`idf.py menuconfig`) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
-
-### SD card (optional)
-
-By default the example uses SPIFFS filesystem in SPI flash for file storage.
-
-To use an SD card for file storage instead, open the project configuration menu (`idf.py menuconfig`) and enter "File_serving example menu". Then enable "Use SD card for file storage" (`CONFIG_EXAMPLE_MOUNT_SD_CARD`) option.
-
-SD cards can be used either over SPI interface (on all ESP chips) or over SDMMC interface (on ESP32 and ESP32-S3). To use SDMMC interface, enable "Use SDMMC host" (`CONFIG_EXAMPLE_USE_SDMMC_HOST`) option. To use SPI interface, disable this option.
-
-GPIO pins used to connect the SD card can be configured for the SPI interface (on all chips), or for SDMMC interface on chips where it uses GPIO matrix (ESP32-S3). This can be done in "SD card pin configuration" submenu.
-
-The example will be able to mount only cards formatted using FAT32 filesystem. If the card is formatted as exFAT or some other filesystem, you have an option to format it in the example code — "Format the card if mount failed" (`CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED`).
-
-For more information on pin configuration for SDMMC and SDSPI, check related examples: [sdmmc](../../../storage/sd_card/sdmmc/README.md), [sdspi](../../../storage/sd_card/sdmmc/README.md).
-
-### Build and Flash
-
-Build the project and flash it to the board, then run monitor tool to view serial output:
-
-```
-idf.py -p PORT flash monitor
-```
-
-(Replace PORT with the name of the serial port to use.)
-
-(To exit the serial monitor, type ``Ctrl-]``.)
-
-See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
-
-### Working with the example
-
-1. Note down the IP assigned to your ESP module. The IP address is logged by the example as follows:
-
-   ```
-   I (5424) example_connect: - IPv4 address: 192.168.1.100
-   I (5424) example_connect: - IPv6 address:    fe80:0000:0000:0000:86f7:03ff:fec0:1620, type: ESP_IP6_ADDR_IS
-   ```
-
-   The following steps assume that IP address 192.168.1.100 was assigned.
-
-2. Test the example interactively in a web browser. The default port is 80.
-
-    1. Open path http://192.168.1.100/ or http://192.168.1.100/index.html to see an HTML page with list of files on the server. The page will initially be empty.
-    2. Use the file upload form on the webpage to select and upload a file to the server.
-    3. Click a file link to download / open the file on browser (if supported).
-    4. Click the delete link visible next to each file entry to delete them.
-
-3. Test the example using curl:
-
-    1. `myfile.html` can be uploaded to `/path/on/device/myfile_copy.html` using:
-       ```
-       curl -X POST --data-binary @myfile.html 192.168.43.130:80/upload/path/on/device/myfile_copy.html
-       ```
-
-    2. Download the uploaded file back:
-       ```
-       curl 192.168.43.130:80/path/on/device/myfile_copy.html > myfile_copy.html`
-       ```
-
-    3. Compare the copy with the original using `cmp myfile.html myfile_copy.html`
-
-
-## Note
-
-Browsers often send large header fields when an HTML form is submit. Therefore, for the purpose of this example, `HTTPD_MAX_REQ_HDR_LEN` has been increased to 1024 in `sdkconfig.defaults`. User can adjust this value as per their requirement, keeping in mind the memory constraint of the hardware in use.
+To test how NN works you can flash this app, connect to server and upload MNIST handwritten digit images from `tests/images/mnist`. Line like `Result: 2` shows recognized digit.
 
 ## Example Output
 
 ```
-I (5583) example_connect: Got IPv6 event: Interface "example_connect: sta" address: fe80:0000:0000:0000:266f:28ff:fe80:2c74, type: ESP_IP6_ADDR_IS_LINK_LOCAL
-I (5583) example_connect: Connected to example_connect: sta
-I (5593) example_connect: - IPv4 address: 192.168.194.219
-I (5593) example_connect: - IPv6 address: fe80:0000:0000:0000:266f:28ff:fe80:2c74, type: ESP_IP6_ADDR_IS_LINK_LOCAL
-I (5603) example: Initializing SPIFFS
-I (5723) example: Partition size: total: 896321, used: 0
-I (5723) file_server: Starting HTTP Server on port: '80'
-I (28933) file_server: Receiving file : /test.html...
-I (28933) file_server: Remaining size : 574
-I (28943) file_server: File reception complete
-I (28993) file_server: Found file : test.html (574 bytes)
-I (35943) file_server: Sending file : /test.html (574 bytes)...
-I (35953) file_server: File sending complete
-I (45363) file_server: Deleting file : /test.html
+I (16642) file_server: Receiving file : /2_1065.png...
+I (16642) file_server: Remaining size : 271
+I (16642) file_server: File reception complete
+I (16652) file_server: Process file '/data/2_1065.png'...
+Load image: /data/2_1065.png
+image specs: (28 x 28), 8 bpp, pixel type: 0
+Loaded image: /data/2_1065.png
+Loaded images size in bytes is: 3136
+Copying image data into mutable weight vars: 3136 bytes
+Result: 2
+Confidence: 0.997419
+I (17182) file_server: File processed successfully
+I (17242) file_server: Found file : 0_1009.png (310 bytes)
+I (17252) file_server: Found file : 1_1008.png (159 bytes)
+I (17262) file_server: Found file : 2_1065.png (271 bytes)
+I (26572) file_server: Receiving file : /9_1088.png...
+I (26572) file_server: Remaining size : 269
+I (26572) file_server: File reception complete
+I (26582) file_server: Process file '/data/9_1088.png'...
+Load image: /data/9_1088.png
+image specs: (28 x 28), 8 bpp, pixel type: 0
+Loaded image: /data/9_1088.png
+Loaded images size in bytes is: 3136
+Copying image data into mutable weight vars: 3136 bytes
+Result: 9
+Confidence: 0.946085
+I (27112) file_server: File processed successfully
+I (27162) file_server: Found file : 0_1009.png (310 bytes)
+I (27182) file_server: Found file : 1_1008.png (159 bytes)
+I (27202) file_server: Found file : 2_1065.png (271 bytes)
+I (27222) file_server: Found file : 9_1088.png (269 bytes)
 ```
+
+## TODO
+- Avoid integrating constant weights from `lenet_mnist.weights.txt` [into app image](https://github.com/gerekon/glow_image_file_server/-/blob/main/main/img_nn.cpp#L282). It adds ~1.7 MB to flash image RO data (DROM). We can keep weights binary file `lenet_mnist.weights.bin` in SPIFFS and load it at startup. ESP32-S3 have 8MB PSRAM, so we can allocate buffer for it via `malloc`.
+- Dynamically allocate large buffers for [mutable weights](https://github.com/gerekon/glow_image_file_server/-/blob/main/main/img_nn.cpp#L287) and [activations](https://github.com/gerekon/glow_image_file_server/-/blob/main/main/img_nn.cpp#L291) via `malloc`.
+- Cleanup `PNGdec`. Make it as component and connect sources as GIT submodule.
+- Add special button on HTML page to analize selected file
+- Make LLVM Xtensa backend using TIE instructions in the GLOW bundle
+- Port to ESP32-P4
+
+## How to build everything from scratch
+
+### Build LLVM
+To build bundles for Espressif chips you need to build GLOW with our LLVM port. GLOW needs full LLVM framework built with enabled RTTI. LLVM also needs some modification to be compatible with GLOW project because LLVM 15.0.0 version broght some breaking changes. For LLVM you need to use [this branch](https://github.com/gerekon/llvm-project/tree/glow_port).
+```bash
+git clone -b glow_port --single-branch https://github.com/gerekon/llvm-project.git
+export LLVM_PROJECT_PATH=$PWD/llvm-project
+export LLVM_BUILD_DIR=$PWD/build_llvm
+mkdir $LLVM_BUILD_DIR
+cd $LLVM_BUILD_DIR
+cmake -G Ninja $LLVM_PROJECT_PATH/llvm \
+  -DCMAKE_INSTALL_PREFIX=$PWD/dist \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DLLVM_ENABLE_RTTI=ON  \
+  -DLLVM_ENABLE_PROJECTS="clang" \
+  -DLLVM_TARGETS_TO_BUILD="X86" \
+  -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD="Xtensa"
+cmake --build . --target install
+```
+
+### Build GLOW
+Use [this glow port](https://github.com/gerekon/glow/tree/esp_llvm).
+```bash
+git clone -b esp_llvm --single-branch https://github.com/gerekon/glow.git
+export GLOW_REPO_PATH=$PWD/glow
+export GLOW_BUILD_DIR=$PWD/build_glow
+mkdir -p $GLOW_BUILD_DIR
+cd $GLOW_BUILD_DIR
+export PATH=$LLVM_BUILD_DIR/dist/bin:$PATH
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
+   -DLLVM_DIR=$LLVM_BUILD_DIR/dist/lib/cmake/llvm \
+   -DCMAKE_C_COMPILER=$LLVM_BUILD_DIR/dist/bin/clang \
+   -DCMAKE_CXX_COMPILER=$LLVM_BUILD_DIR/dist/bin/clang++ \
+   $GLOW_REPO_PATH
+cmake --build .
+```
+NOTE: You may need to install cmake 3.17.3 due to [problem with `folly` library buid](https://github.com/facebook/folly/issues/1414).
+
+### Build GLOW AOT bundle
+More details are [here](https://github.com/pytorch/glow/blob/master/docs/AOT.md).
+Get LeNet and MNIST handwritten digit recognition model files (used in GLOW examples):
+```bash
+export MODEL_PATH=$PWD/lenet_mnist
+mkdir -p $MODEL_PATH
+cd $MODEL_PATH
+wget http://fb-glow-assets.s3.amazonaws.com/models/lenet_mnist/init_net.pb
+wget http://fb-glow-assets.s3.amazonaws.com/models/lenet_mnist/predict_net.pb
+$GLOW_BUILD_DIR/bin/model-compiler -backend=CPU -model=$MODEL_PATH -emit-bundle=$PWD/build_model -model-input="data,float,[1,1,28,28]" -target=xtensa-esp-elf -mcpu=esp32s3
+```
+Copy files from `$PWD/build_model` to the project. Build and flash project as usual.
