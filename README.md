@@ -49,8 +49,8 @@ I (27222) file_server: Found file : 9_1088.png (269 bytes)
 ```
 
 ## TODO
-- Avoid integrating constant weights from `lenet_mnist.weights.txt` [into app image](https://github.com/gerekon/glow_image_file_server/-/blob/main/main/img_nn.cpp#L282). It adds ~1.7 MB to flash image RO data (DROM). We can keep weights binary file `lenet_mnist.weights.bin` in SPIFFS and load it at startup. ESP32-S3 have 8MB PSRAM, so we can allocate buffer for it via `malloc`.
-- Dynamically allocate large buffers for [mutable weights](https://github.com/gerekon/glow_image_file_server/-/blob/main/main/img_nn.cpp#L287) and [activations](https://github.com/gerekon/glow_image_file_server/-/blob/main/main/img_nn.cpp#L291) via `malloc`.
+- Avoid integrating constant weights from `lenet_mnist.weights.txt` [into app image](https://github.com/gerekon/glow_image_file_server/blob/main/main/img_nn.cpp#L282). It adds ~1.7 MB to flash image RO data (DROM). We can keep weights binary file `lenet_mnist.weights.bin` in SPIFFS and load it at startup. ESP32-S3 have 8MB PSRAM, so we can allocate buffer for it via `malloc`.
+- Dynamically allocate large buffers for [mutable weights](https://github.com/gerekon/glow_image_file_server/blob/main/main/img_nn.cpp#L287) and [activations](https://github.com/gerekon/glow_image_file_server/blob/main/main/img_nn.cpp#L291) via `malloc`.
 - Cleanup `PNGdec`. Make it as component and connect sources as GIT submodule.
 - Add special button on HTML page to analize selected file
 - Make LLVM Xtensa backend using TIE instructions in the GLOW bundle
