@@ -92,7 +92,14 @@ cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
    $GLOW_REPO_PATH
 cmake --build .
 ```
-NOTE: You may need to install cmake 3.17.3 due to [problem with `folly` library buid](https://github.com/facebook/folly/issues/1414).
+#### Workarounds
+- You may need to install cmake 3.17.3 due to [problem with `folly` library build](https://github.com/facebook/folly/issues/1414).
+- Since by default LLVM 15 treats `-Wunused-but-set-variable` warning as an error you may face the following problem when `googlebenchmark` submodule is built:
+  ```
+  /glow/tests/googlebenchmark/src/complexity.cc:85:10: error: variable 'sigma_gn' set but not used [-Werror,-Wunused-but-set-variable]
+  double sigma_gn = 0.0;
+  ```
+  To solve it you can manually put `(void)sigma_gn;` somewhere in that function.
 
 ### Build GLOW AOT bundle
 More details are [here](https://github.com/pytorch/glow/blob/master/docs/AOT.md).
